@@ -1,0 +1,49 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#1E293B"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#0F172A"/>
+    <!-- Trench Coat -->
+    <path
+        android:pathData="M20,96 C20,75 32,68 50,68 C68,68 80,75 80,96 Z"
+        android:fillColor="#334155"/>
+    <!-- High Collar -->
+    <path
+        android:pathData="M34,68 L44,85 L50,72 L56,85 L66,68 Z"
+        android:fillColor="#475569"/>
+    <!-- Face / Shadowed -->
+    <path
+        android:pathData="M35,46 C35,35 65,35 65,46 C65,58 58,66 50,66 C42,66 35,58 35,46 Z"
+        android:fillColor="#E2B897"/>
+    <!-- Beard / Stubble -->
+    <path
+        android:pathData="M40,58 C40,65 60,65 60,58 C60,63 56,66 50,66 C44,66 40,63 40,58 Z"
+        android:fillColor="#946C4F"/>
+    <!-- Eyes Glint -->
+    <path
+        android:pathData="M40,48 L46,48"
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="2"/>
+    <path
+        android:pathData="M54,48 L60,48"
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="2"/>
+    <!-- Fedora Brim -->
+    <path
+        android:pathData="M18,44 Q50,38 82,44 C76,40 68,36 50,36 C32,36 24,40 18,44 Z"
+        android:fillColor="#1E293B"/>
+    <!-- Fedora Crown -->
+    <path
+        android:pathData="M30,38 C32,20 68,20 70,38 Z"
+        android:fillColor="#334155"/>
+    <!-- Ribbon -->
+    <path
+        android:pathData="M29,35 C35,34 65,34 71,35 L70,38 C65,37 35,37 30,38 Z"
+        android:fillColor="#94A3B8"/>
+</vector>

@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#06B6D4"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#090D16"/>
+    <!-- Cyber Jacket -->
+    <path
+        android:pathData="M20,96 C20,74 34,68 50,68 C66,68 80,74 80,96 Z"
+        android:fillColor="#1E1B4B"/>
+    <!-- Glowing Tech Seams -->
+    <path
+        android:pathData="M42,68 L46,96 M58,68 L54,96"
+        android:strokeColor="#06B6D4"
+        android:strokeWidth="2"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,30 66,30 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#E5C5B0"/>
+    <!-- Spiky Cyber Hair -->
+    <path
+        android:pathData="M30,34 L36,18 L44,24 L52,14 L60,22 L68,16 L72,34 Z"
+        android:fillColor="#312E81"/>
+    <!-- Cyan Highlight in Hair -->
+    <path
+        android:pathData="M44,24 L52,14 L56,22 Z"
+        android:fillColor="#38BDF8"/>
+    <!-- Cyber Visor -->
+    <path
+        android:pathData="M30,42 L70,42 L66,52 L34,52 Z"
+        android:fillColor="#06B6D4"/>
+    <path
+        android:pathData="M36,46 L64,46"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"/>
+    <!-- Cyber Ear Unit -->
+    <path
+        android:pathData="M27,44 L32,44 L32,54 L27,54 Z"
+        android:fillColor="#F43F5E"/>
+    <path
+        android:pathData="M68,44 L73,44 L73,54 L68,54 Z"
+        android:fillColor="#F43F5E"/>
+</vector>

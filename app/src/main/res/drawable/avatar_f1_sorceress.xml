@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#A855F7"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#2E1065"/>
+    <!-- Magic Robe -->
+    <path
+        android:pathData="M22,96 C22,76 34,70 50,70 C66,70 78,76 78,96 Z"
+        android:fillColor="#581C87"/>
+    <!-- Golden Pendant -->
+    <path
+        android:pathData="M47,75 L53,75 L50,81 Z"
+        android:fillColor="#FACC15"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#FCE7D6"/>
+    <!-- Flowing Violet Hair -->
+    <path
+        android:pathData="M30,46 C24,26 44,16 50,16 C56,16 76,26 70,46 C76,64 74,84 72,90 C68,76 66,60 66,46 C58,34 42,34 34,46 C34,60 32,76 28,90 C26,84 24,64 30,46 Z"
+        android:fillColor="#7E22CE"/>
+    <!-- Hair Highlights -->
+    <path
+        android:pathData="M42,20 C48,18 56,18 62,22"
+        android:strokeColor="#C084FC"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"/>
+    <!-- Eyes -->
+    <path
+        android:pathData="M40,44 A2.2,2.2 0 1,1 40,46 A2.2,2.2 0 1,1 40,44 Z"
+        android:fillColor="#3B0764"/>
+    <path
+        android:pathData="M60,44 A2.2,2.2 0 1,1 60,46 A2.2,2.2 0 1,1 60,44 Z"
+        android:fillColor="#3B0764"/>
+    <!-- Magic Sparkles -->
+    <path
+        android:pathData="M18,30 L20,34 L24,36 L20,38 L18,42 L16,38 L12,36 L16,34 Z"
+        android:fillColor="#FDE047"/>
+    <path
+        android:pathData="M80,24 L81,27 L84,28 L81,29 L80,32 L79,29 L76,28 L79,27 Z"
+        android:fillColor="#FDE047"/>
+</vector>

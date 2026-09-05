@@ -1,0 +1,42 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#EC4899"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#180B22"/>
+    <!-- High-Tech Bodysuit -->
+    <path
+        android:pathData="M22,96 C22,76 34,70 50,70 C66,70 78,76 78,96 Z"
+        android:fillColor="#2E1065"/>
+    <path
+        android:pathData="M50,70 L50,96"
+        android:strokeColor="#EC4899"
+        android:strokeWidth="2.5"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#F5D0C5"/>
+    <!-- Sleek Silver/Lilac Hair -->
+    <path
+        android:pathData="M30,42 C30,22 70,22 70,42 C68,60 66,72 64,80 C62,60 62,40 50,38 C38,40 38,60 36,80 C34,72 32,60 30,42 Z"
+        android:fillColor="#E0E7FF"/>
+    <!-- Glowing Cyber Eye / Monocle -->
+    <path
+        android:pathData="M58,40 A6,6 0 1,1 58,52 A6,6 0 1,1 58,40 Z"
+        android:strokeColor="#06B6D4"
+        android:strokeWidth="2"
+        android:fillColor="#22D3EE"/>
+    <path
+        android:pathData="M64,46 L74,46"
+        android:strokeColor="#06B6D4"
+        android:strokeWidth="2"/>
+    <!-- Left Eye -->
+    <path
+        android:pathData="M40,44 A2.2,2.2 0 1,1 40,46 A2.2,2.2 0 1,1 40,44 Z"
+        android:fillColor="#4C1D95"/>
+</vector>

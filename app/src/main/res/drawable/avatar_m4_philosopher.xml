@@ -1,0 +1,43 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#84CC16"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#142812"/>
+    <!-- Toga / Robe -->
+    <path
+        android:pathData="M22,96 C22,76 34,70 50,70 C66,70 78,76 78,96 Z"
+        android:fillColor="#365314"/>
+    <!-- Robe Sash -->
+    <path
+        android:pathData="M36,96 L64,70 L72,76 L44,96 Z"
+        android:fillColor="#A16207"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,56 58,64 50,64 C42,64 34,56 34,42 Z"
+        android:fillColor="#EBC6A6"/>
+    <!-- Silver Hair -->
+    <path
+        android:pathData="M32,40 C32,22 68,22 68,40 C66,26 34,26 32,40 Z"
+        android:fillColor="#CBD5E1"/>
+    <!-- Laurel Wreath -->
+    <path
+        android:pathData="M30,32 C38,26 62,26 70,32"
+        android:strokeColor="#EAB308"
+        android:strokeWidth="3"
+        android:fillColor="#00000000"/>
+    <!-- Eyes -->
+    <path
+        android:pathData="M41,44 L45,44 M55,44 L59,44"
+        android:strokeColor="#262626"
+        android:strokeWidth="2.5"/>
+    <!-- Majestic Beard -->
+    <path
+        android:pathData="M34,50 C34,76 66,76 66,50 C62,60 38,60 34,50 Z"
+        android:fillColor="#E2E8F0"/>
+</vector>

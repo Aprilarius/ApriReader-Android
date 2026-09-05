@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#E11D48"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#310815"/>
+    <!-- Victorian Velvet Dress -->
+    <path
+        android:pathData="M22,96 C22,76 34,70 50,70 C66,70 78,76 78,96 Z"
+        android:fillColor="#4C0519"/>
+    <!-- Lace Collar -->
+    <path
+        android:pathData="M38,70 C44,78 56,78 62,70 C64,74 36,74 38,70 Z"
+        android:fillColor="#FFF1F2"/>
+    <!-- Antique Cameo Pin -->
+    <path
+        android:pathData="M48,74 A3,4 0 1,1 48,80 A3,4 0 1,1 48,74 Z"
+        android:fillColor="#FDE047"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#FDE2D4"/>
+    <!-- Golden Curls -->
+    <path
+        android:pathData="M30,44 C26,24 44,18 50,18 C56,18 74,24 70,44 C76,58 72,74 68,82 C64,66 64,50 64,42 C56,32 44,32 36,42 C36,50 36,66 32,82 C28,74 24,58 30,44 Z"
+        android:fillColor="#CA8A04"/>
+    <!-- Tea Rose in Hair -->
+    <path
+        android:pathData="M66,28 A4,4 0 1,1 66,34 A4,4 0 1,1 66,28 Z"
+        android:fillColor="#FB7185"/>
+    <!-- Eyes & Gentle Smile -->
+    <path
+        android:pathData="M40,44 A2.2,2.2 0 1,1 40,46 A2.2,2.2 0 1,1 40,44 Z"
+        android:fillColor="#451A03"/>
+    <path
+        android:pathData="M60,44 A2.2,2.2 0 1,1 60,46 A2.2,2.2 0 1,1 60,44 Z"
+        android:fillColor="#451A03"/>
+    <path
+        android:pathData="M45,56 Q50,60 55,56"
+        android:strokeColor="#BE123C"
+        android:strokeWidth="1.8"
+        android:fillColor="#00000000"/>
+</vector>

@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+.kotlin/
+build/
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# IDE и локальные инструменты
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+.claude/
+
+# ОС
+.DS_Store
+Thumbs.db
+dist/
+build-tools-out/
+*.class

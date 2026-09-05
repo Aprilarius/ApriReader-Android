@@ -1,0 +1,50 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#FB7185"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#4C0519"/>
+    <!-- Turtleneck Sweater -->
+    <path
+        android:pathData="M22,96 C22,76 34,70 50,70 C66,70 78,76 78,96 Z"
+        android:fillColor="#881337"/>
+    <path
+        android:pathData="M42,66 L58,66 L58,74 L42,74 Z"
+        android:fillColor="#9F1239"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#FEE4D6"/>
+    <!-- Chic Bob Hair -->
+    <path
+        android:pathData="M30,42 C30,28 70,28 70,42 C70,58 66,64 66,64 C64,52 64,40 50,40 C36,40 36,52 34,64 C34,64 30,58 30,42 Z"
+        android:fillColor="#1C1917"/>
+    <!-- Red Beret -->
+    <path
+        android:pathData="M26,30 C30,16 68,14 74,26 C64,22 36,22 26,30 Z"
+        android:fillColor="#BE123C"/>
+    <path
+        android:pathData="M50,14 L50,10"
+        android:strokeColor="#BE123C"
+        android:strokeWidth="2.5"/>
+    <!-- Stylish Thin Glasses -->
+    <path
+        android:pathData="M36,44 A4,4 0 1,1 36,48 A4,4 0 1,1 36,44 Z"
+        android:strokeColor="#E11D48"
+        android:strokeWidth="1.8"
+        android:fillColor="#00000000"/>
+    <path
+        android:pathData="M56,44 A4,4 0 1,1 56,48 A4,4 0 1,1 56,44 Z"
+        android:strokeColor="#E11D48"
+        android:strokeWidth="1.8"
+        android:fillColor="#00000000"/>
+    <path
+        android:pathData="M44,46 L52,46"
+        android:strokeColor="#E11D48"
+        android:strokeWidth="1.8"/>
+</vector>

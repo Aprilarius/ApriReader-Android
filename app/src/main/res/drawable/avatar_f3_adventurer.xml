@@ -1,0 +1,49 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z"
+        android:fillColor="#10B981"/>
+    <path
+        android:pathData="M50,4 A46,46 0 1,1 50,96 A46,46 0 1,1 50,4 Z"
+        android:fillColor="#064E3B"/>
+    <!-- Explorer Jacket -->
+    <path
+        android:pathData="M22,96 C22,76 34,70 50,70 C66,70 78,76 78,96 Z"
+        android:fillColor="#78350F"/>
+    <!-- Compass Cord -->
+    <path
+        android:pathData="M44,70 L50,84 L56,70"
+        android:strokeColor="#D97706"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"/>
+    <!-- Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#FBD7BA"/>
+    <!-- Explorer Bandana -->
+    <path
+        android:pathData="M30,30 C40,24 60,24 70,30 L68,36 C58,32 42,32 32,36 Z"
+        android:fillColor="#DC2626"/>
+    <!-- Auburn Hair with Braid -->
+    <path
+        android:pathData="M32,36 C30,46 32,60 30,76 C36,66 36,46 36,36 Z"
+        android:fillColor="#9A3412"/>
+    <path
+        android:pathData="M68,36 C70,46 68,60 70,76 C64,66 64,46 64,36 Z"
+        android:fillColor="#9A3412"/>
+    <!-- Eyes -->
+    <path
+        android:pathData="M40,44 A2.2,2.2 0 1,1 40,46 A2.2,2.2 0 1,1 40,44 Z"
+        android:fillColor="#1E293B"/>
+    <path
+        android:pathData="M60,44 A2.2,2.2 0 1,1 60,46 A2.2,2.2 0 1,1 60,44 Z"
+        android:fillColor="#1E293B"/>
+    <!-- Freckles -->
+    <path
+        android:pathData="M37,50 A1,1 0 1,1 37,51 M41,52 A1,1 0 1,1 41,53 M59,52 A1,1 0 1,1 59,53 M63,50 A1,1 0 1,1 63,51"
+        android:strokeColor="#B45309"
+        android:strokeWidth="1.5"/>
+</vector>
