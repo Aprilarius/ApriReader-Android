@@ -1,68 +1,62 @@
 # ApriReader — Final Release Audit & Red Team Report
 
-**Date**: 2026-08-30  
-**Audit Team**: Principal Android Engineer, Senior Mobile QA Engineer, Security Engineer, Mobile Application Penetration Tester, Senior UI/UX Designer, Performance Engineer, Release Engineer, Google Play Compliance Specialist.  
-**Audited Target**: ApriReader (Package: `com.aprireader.app`)  
+**Date**: 2026-09-06
+**Audited Target**: ApriReader (Package: `com.aprireader.app`), Version 2.0.0 (Version Code 19)
 **Verdict**: **RELEASE CANDIDATE**
 
 ---
 
 ## 1. Executive Summary
 
-ApriReader is a privacy-first, local-first reader application engineered for Android 8.0+ (Min SDK 26) through Android 15/16 (Target SDK 36). The comprehensive audit, static analysis, automated unit testing, fuzz testing, and release build pipelines have completed with **ZERO critical defects**, **ZERO high-severity vulnerabilities**, and **100% passing test suites**.
+ApriReader is a privacy-first, local-first reader application for Android 8.0+ (Min SDK 26) through Android 15/16 (Target SDK 36). This pass re-audited the full codebase end to end ahead of the 2.0.0 release: manifest and permissions, signing, secrets, network security, SQL usage, WebView usage, telemetry, ProGuard rules, cross-module concurrency, storage-scan safety, and DB migration risk — on top of the format-parser and lifecycle work already covered by earlier audits (see [FINAL_RELEASE_AUDIT history / BUGS.md]).
 
-The application is completely free of third-party telemetry, trackers, and advertising libraries. All book parsing, caching, and text-to-speech rendering operate locally on device.
+**Two new defects were found and fixed** during this pass (BUG-022, BUG-023 in [BUGS.md](BUGS.md)) — both in the comic (CBZ/CBR) pipeline, both confirmed by the reporting user's real-world use and reproduced with targeted tests before being fixed. No other correctness or security defects were found in this pass.
 
----
-
-## 2. Red Team & Security Assessment
-
-### 2.1 File Parser Security & Fuzzing
-- **Zip Slip & Path Traversal**: Verified that `ZipArchive.kt` normalizes and strips `..` sequences, preventing any arbitrary file write or archive path escape vectors during EPUB or CBZ extraction.
-- **XXE (XML External Entity)**: Verified that `Xml.kt` configures `DocumentBuilderFactory` with disabled `doctype-decl`, disabled external DTDs, and disabled external parameter entities.
-- **Malformed Input Resilience**: Tested zero-byte files, broken XML headers, and truncated archives across all supported formats (EPUB, FB2, TXT, PDF, CBZ, CBR). All parsers degrade gracefully by throwing `BookParseException` or recovering first-chapter headings.
-- **Custom Font Validation**: Tested `CustomFontRepository` against arbitrary executables, oversized payloads, and corrupted files. Validates TrueType/OpenType magic headers (`0x00010000`, `0x4F54544F`, `0x774F4646`, `0x774F4632`, `0x74746366`) and enforces a 25 MB file size limit.
-
-### 2.2 Attack Surface & Network Security
-- **Cleartext HTTP**: Manifest enforces `android:usesCleartextTraffic="false"`. `MetadataRepository` automatically upgrades all cover URLs to TLS (`https://`) and caps cover downloads at 15 MB.
-- **Exported Components**: Minimal attack surface. Only `MainActivity` and `CurrentBookWidget` are exported with strictly defined intent filters.
-- **IPC & Permissions**: App does not request dangerous storage permissions (`MANAGE_EXTERNAL_STORAGE`), relying entirely on Storage Access Framework (SAF) URI grants.
+The application remains completely free of third-party telemetry, trackers, and advertising libraries. All book parsing, caching, and text-to-speech rendering operate locally on device.
 
 ---
 
-## 3. Architecture & Code Quality Audit
+## 2. New Findings This Pass
 
-- **Clean Layering**: Clear separation of `:bookformat` (pure Kotlin domain & format engine) and `:app` (Jetpack Compose UI, Room DB, MVI/MVVM ViewModels).
-- **Zero AI Artifacts / Clean Human Code**: 0 `TODO`, 0 `FIXME`, 0 empty catch blocks, 0 unhandled coroutine leaks.
-- **State & Concurrency**: Atomic state mutations using `MutableStateFlow.update { ... }`. Lifecycle-safe scopes (`viewModelScope` for UI jobs, `appScope` for persistent progress updates on session close).
-- **Resource Management**: Bitmaps are recycled, file descriptors and `RandomAccessSource` streams are cleanly closed in `onCleared()`.
+### 2.1 BUG-022 — Comic files unselectable in the system file picker (HIGH)
+`LibraryScreen.kt`'s `SUPPORTED_MIME_TYPES`, passed to the SAF picker via `EXTRA_MIME_TYPES`, listed invented MIME strings for CBZ/CBR (`application/vnd.comicbook+zip`, `application/vnd.comicbook-rar`) that real Android `DocumentsProvider`s never report for these extensions. The system picker greys out any file whose reported MIME type isn't in the list — making `.cbz`/`.cbr` files impossible to select. **Fixed** by prepending a `"*/*"` wildcard, which disables OS-level MIME filtering; the app's own `BookFormat.fromExtension()` check after selection remains the actual gate, now surfaced through a friendly "unsupported format" message instead of silent failure.
+
+### 2.2 BUG-023 — CBR page corruption under concurrent decode (HIGH)
+`CbrDocument.openPage()` read pages from a single shared `junrar.Archive` instance with no synchronization. The reader's pager decodes the current page and both neighbors concurrently (`beyondViewportPageCount = 1`, each page's `produceState` running on its own IO-dispatcher coroutine). junrar's `Archive` is not safe for concurrent `getInputStream()` calls; concurrent access corrupted its internal decompressor state, silently decoding some pages to 0 bytes. Confirmed with a 4-thread concurrent-read test against a real user CBR file before fixing (page 0 → 0 bytes without the fix), and reconfirmed passing after. **Fixed** by wrapping the read in `synchronized(archive) { ... }`, the same pattern already used for the system `PdfRenderer` in `BookSession.Pdf`. `CbzDocument` was unaffected — its `RandomAccessSource.readAt()` implementations were already `@Synchronized`.
 
 ---
 
-## 4. UI/UX & Accessibility Review
+## 3. Areas Re-Verified This Pass (No New Issues)
 
-- **Theming & Customization**: Seamless switching between Glassmorphism, Neomorphism, Cyberpunk, OLED Black, Paper Light, and Modern Dark themes without UI freeze or white-screen glitches.
-- **Typography & ADHD Focus Modes**: Bionic reading, RSVP speed reader, line focus ruler, 12+ bundled Google Fonts, and custom font import.
-- **Local Profile**: High-contrast squircle avatars, 10 built-in character presets (5 male, 5 female), and instant custom photo upload with live preview.
-- **A11y**: Touch targets conform to $\ge$ 48dp, icons provide semantic `contentDescription`s, and high-contrast color pairings ensure readability.
+- **Manifest & exported components**: only `MainActivity` is exported (launcher + VIEW/SEND intent filters with explicit MIME lists); `AudioPlayerService` and `CurrentBookWidgetReceiver` are `exported="false"`.
+- **Secrets**: no hardcoded API keys, tokens, or credentials anywhere in `:app` or `:bookformat`. `keystore.properties` / `*.jks` correctly gitignored and not tracked.
+- **Network security**: `usesCleartextTraffic="false"`; `MetadataRepository` enforces HTTPS on every request and upgrades any `http://` cover URL; connect/read timeouts set; cover downloads capped at 15MB after fetch (see §4 for a minor hardening note).
+- **SQL**: no `@RawQuery`/string-built SQL anywhere — all Room access is through typed DAOs.
+- **WebView**: none in the app (`FlowReader.kt`'s only "WebView" mention is a comment explaining why native Compose text rendering was chosen instead).
+- **Telemetry**: zero analytics/crash-reporting/ad SDKs in the dependency graph.
+- **ProGuard/R8**: release build is minified and shrunk; rules keep only what junrar/PDFBox/Room genuinely need reflectively.
+- **Folder scanning** (`LibraryScanner.scanTree`): BFS with a `visited` document-id set — safe against directory cycles/symlink loops in a SAF tree.
+- **Room schema**: version is still 1, no entities changed this cycle — no migration needed for 2.0.0.
+- **Cross-module concurrency**: besides the CBR bug above, no other shared-mutable-state document reader was found unsynchronized; `FileRandomAccessSource`/`DescriptorRandomAccessSource` (used by EPUB/CBZ/PDF byte access) are already `@Synchronized`, and PDF page rendering is already `synchronized(renderer)`.
+
+## 4. Minor, Non-Blocking Observations
+
+- `MetadataRepository.fetchImageBytes()` calls `body.bytes()` before checking the 15MB size cap, so a response without an honest `Content-Length` could still be fully buffered into memory before rejection. Low real-world risk (HTTPS-only, fixed trusted catalogs — FantLab/Open Library/Google Books/Gutendex/Wikipedia — not arbitrary attacker-controlled hosts, and this path is opt-in/user-triggered), left as-is rather than changed under release-freeze; worth a follow-up to cap via a length-limiting `Source` if hardened further.
+- `QA_MASTER_PLAN.md` still lists most phases as "IN PROGRESS" from an earlier planning pass — it was not treated as a live checklist this session (no device available to close out phases like device-based a11y or lifecycle torture testing); [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) is the authoritative, current release gate.
 
 ---
 
 ## 5. Release Artifact Specifications
 
-- **Release APK**: `app/build/outputs/apk/release/app-release.apk`
-  - **Size**: **17.21 MB** (Optimized with R8 full-mode shrinking)
-  - **Signatures**: V1, V2, V3 APK signature schemes verified.
-- **Release AAB**: `app/build/outputs/bundle/release/app-release.aab`
-  - **Size**: **20.53 MB**
-  - **Target SDK**: 36
-  - **Min SDK**: 26
-- **Automated Test Results**: **46 / 46 PASSED** (100% Success rate).
+- **Release APK**: `app/build/outputs/apk/release/app-release.apk` — **19.3 MB**, `versionCode=19`, `versionName=2.0.0`.
+- **Release AAB**: `app/build/outputs/bundle/release/app-release.aab` — **23.7 MB**.
+- **Signing**: `apri-upload.jks`, `CN=ApriReader`, SHA-1 `74:fc:7b:81:49:45:12:78:3f:be:90:b9:dc:56:61:2d:9f:86:d0:f6` — unchanged from the previous release, confirming no signing regression.
+- **Automated tests**: 120 / 120 **PASSED** (`:bookformat` 28, `:app` 92). `:app:lintDebug`: 0 errors.
 
 ---
 
 ## 6. Final Verdict
 
-# ✅ RELEASE CANDIDATE
+# ✅ RELEASE CANDIDATE — 2.0.0
 
-ApriReader is fully verified, robust, secure, and ready for deployment to the **Google Play Store** and **RuStore**.
+Real-device confirmation of BUG-022/BUG-023 by the reporting user is the one open item before calling this fully closed (see [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) §3) — everything else in this report is verified by static analysis, unit/JVM tests against a real reproduction file, lint, and a clean signed release build.

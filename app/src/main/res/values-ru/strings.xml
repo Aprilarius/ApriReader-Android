@@ -165,6 +165,7 @@
 <string name="reader_action_highlight">Выделить</string>
 <string name="reader_action_bookmark">Закладка</string>
 <string name="reader_page_of">Страница %1$d из %2$d</string>
+<string name="reader_page_load_failed">Не удалось загрузить страницу %1$d</string>
 <string name="reader_chapter_of">Глава %1$d из %2$d</string>
 <string name="reader_next_chapter">Следующая глава</string>
 <string name="reader_prev_chapter">Предыдущая глава</string>

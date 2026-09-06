@@ -151,6 +151,7 @@
 <string name="reader_action_highlight">Seç</string>
 <string name="reader_action_bookmark">Əlfəcin</string>
 <string name="reader_page_of">Səhifə %1$d / %2$d</string>
+<string name="reader_page_load_failed">Səhifə %1$d yüklənmədi</string>
 <string name="reader_chapter_of">Fəsil %1$d / %2$d</string>
 <string name="reader_next_chapter">Növbəti fəsil</string>
 <string name="reader_prev_chapter">Əvvəlki fəsil</string>

@@ -78,7 +78,9 @@ ApriReader — это современный, быстрый и красивый
 
 ---
 
-### 🆕 Что нового в версии 1.8.0:
+### 🆕 Что нового в версии 2.0.0:
+- 📂 Исправлен выбор файлов комиксов (CBZ/CBR) в системном диалоге — файлы больше не становятся недоступны для выбора.
+- 🖼️ Исправлено повреждение отдельных страниц комиксов при быстром листании.
 - 📖 Исправлено постраничное листание и переключение между листанием и прокруткой — позиция в книге больше не теряется.
 - 🎨 Стили оформления Glassmorphism и Neumorphism переработаны и стали по-настоящему различимыми.
 - 🎧 Аудиоплеер надёжнее переживает закрытие приложения из недавних.
@@ -173,7 +175,9 @@ Requires Android 8.0 or newer.
 
 ---
 
-### 🆕 What's New in Version 1.8.0:
+### 🆕 What's New in Version 2.0.0:
+- 📂 Fixed comic file (CBZ/CBR) picking in the system dialog — files no longer show up greyed out.
+- 🖼️ Fixed occasional comic page corruption when flipping through pages quickly.
 - 📖 Fixed paged reading and the scroll/paging toggle — your position no longer resets.
 - 🎨 Glassmorphism and Neumorphism themes reworked to actually look distinct.
 - 🎧 More reliable audiobook playback when closing the app from recents.

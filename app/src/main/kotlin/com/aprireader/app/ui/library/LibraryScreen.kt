@@ -184,7 +184,10 @@ fun LibraryScreen(
         }
     }
 
-    LaunchedEffect(Unit) { viewModel.revalidateAccess() }
+    LaunchedEffect(Unit) {
+        viewModel.revalidateAccess()
+        viewModel.autoRescan()
+    }
 
     Scaffold(
         topBar = {
@@ -1269,7 +1272,29 @@ fun ShelfMessage.text(): String = when (this) {
 }
 
 
+/**
+ * MIME-типы для системного выбора файла (`EXTRA_MIME_TYPES`).
+ *
+ * `"application/vnd.comicbook+zip"` и `"application/vnd.comicbook-rar"` тут
+ * не потому, что их кто-то реально возвращает: это не зарегистрированные в
+ * Android MIME-типы, и ни один провайдер файлов (включая системную «Папку
+ * загрузок») никогда их не сообщит. Настоящий тип `.cbr`/`.cbz`, который
+ * определит система, непредсказуем — зависит от прошивки и её реестра
+ * MimeTypeMap — и почти наверняка не совпадёт ни с одной строкой в этом
+ * списке. DocumentsUI в таком случае просто делает файл неактивным (серым) в
+ * диалоге выбора — реального бага «формат не поддерживается» нет, файл
+ * буквально нельзя было нажать.
+ *
+ * Универсальная маска (звёздочка на месте обеих частей MIME-типа) в списке
+ * отключает эту фильтрацию полностью: все файлы становятся доступны для
+ * выбора. Формат всё равно проверяется точно и без вариантов толкования —
+ * [com.aprireader.bookformat.model.BookFormat.fromExtension] по расширению
+ * файла — сразу после выбора, при импорте; пользователь просто увидит
+ * понятное сообщение «формат не поддерживается», а не молчаливо недоступный
+ * файл.
+ */
 val SUPPORTED_MIME_TYPES = arrayOf(
+    "*/*",
     "application/epub+zip",
     "application/pdf",
     "application/x-fictionbook+xml",

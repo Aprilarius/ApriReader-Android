@@ -212,6 +212,17 @@ class LibraryViewModel(
 
     fun revalidateAccess() = viewModelScope.launch { library.revalidateAccess() }
 
+    /**
+     * Тихое автосканирование уже добавленных папок — на открытии полки, без
+     * нажатия «Пересканировать» руками. Молчит, если новых книг не нашлось:
+     * баннер «Библиотека актуальна» на каждый заход на полку был бы просто
+     * шумом, а не полезной информацией.
+     */
+    fun autoRescan() = viewModelScope.launch {
+        val added = library.rescanAll()
+        if (added > 0) message.value = ShelfMessage.NewBooksFound(added)
+    }
+
     fun removeSource(source: LibrarySource, deleteBooks: Boolean) = viewModelScope.launch {
         library.removeSource(source.treeUri, deleteBooks)
     }

@@ -113,7 +113,15 @@ fun OnboardingScreen(
     ) { uri ->
         if (uri != null) {
             folderAdded = true
-            scope.launch { container.library.addFolder(uri) }
+            // container.appScope, не rememberCoroutineScope(): сканирование папки
+            // с настоящими книгами занимает заметное время, а onboarding обычно
+            // сразу же закрывается (пользователь жмёт «Далее»/«Готово» через
+            // мгновение после выбора папки) — экран уходит из композиции, и
+            // scope, привязанный к нему, обрывает сканирование на середине.
+            // Ни одна книга не успевала добавиться, и приходилось повторять
+            // импорт уже с главного экрана, где сканирование живёт в
+            // viewModelScope и переживает переход.
+            container.appScope.launch { container.library.addFolder(uri) }
         }
     }
 

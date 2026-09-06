@@ -151,6 +151,7 @@
 <string name="reader_action_highlight">Evidenzia</string>
 <string name="reader_action_bookmark">Segnalibro</string>
 <string name="reader_page_of">Pagina %1$d di %2$d</string>
+<string name="reader_page_load_failed">Impossibile caricare la pagina %1$d</string>
 <string name="reader_chapter_of">Capitolo %1$d di %2$d</string>
 <string name="reader_next_chapter">Capitolo successivo</string>
 <string name="reader_prev_chapter">Capitolo precedente</string>

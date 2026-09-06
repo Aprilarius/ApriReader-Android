@@ -165,6 +165,7 @@
 <string name="reader_action_highlight">Highlight</string>
 <string name="reader_action_bookmark">Bookmark</string>
 <string name="reader_page_of">Page %1$d of %2$d</string>
+<string name="reader_page_load_failed">Couldn\'t load page %1$d</string>
 <string name="reader_chapter_of">Chapter %1$d of %2$d</string>
 <string name="reader_next_chapter">Next chapter</string>
 <string name="reader_prev_chapter">Previous chapter</string>

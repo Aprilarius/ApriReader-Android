@@ -96,20 +96,30 @@ object DocumentCache {
     private const val MAX_CACHE_BYTES = 512L * 1024 * 1024
 
     fun materialize(context: Context, uri: Uri, displayName: String): File? {
+        val tag = "DocumentCache"
+        val startedAt = System.currentTimeMillis()
         val dir = File(context.cacheDir, "books").apply { mkdirs() }
         val target = File(dir, "${uri.toString().sha1()}_${displayName.takeLast(40).sanitized()}")
         val remoteSize = querySize(context, uri)
         if (target.exists() && (remoteSize == null || target.length() == remoteSize)) {
             target.setLastModified(System.currentTimeMillis())
+            android.util.Log.d(tag, "materialize(\"$displayName\"): cache hit, ${target.length()} bytes")
             return target
         }
-        return runCatching {
+        android.util.Log.d(tag, "materialize(\"$displayName\"): copying, remoteSize=$remoteSize")
+        val result = runCatching {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 target.outputStream().use { output -> input.copyTo(output, 256 * 1024) }
             } ?: return null
             trim(dir)
             target
         }.getOrNull()
+        android.util.Log.d(
+            tag,
+            "materialize(\"$displayName\"): ${if (result != null) "done, ${result.length()} bytes" else "FAILED"} " +
+                "in ${System.currentTimeMillis() - startedAt}ms",
+        )
+        return result
     }
 
     fun clear(context: Context) {

@@ -1,5 +1,6 @@
 package com.aprireader.app.ui.reader
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -8,6 +9,7 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,7 +23,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +55,17 @@ import com.aprireader.app.R
 import com.aprireader.app.data.prefs.ReadingScrollMode
 import com.aprireader.app.ui.theme.ReaderPalette
 import kotlinx.coroutines.flow.distinctUntilChanged
+
+/**
+ * Состояние загрузки одной страницы PDF/комикса — отдельно от «ещё грузится»
+ * держит «декодировать не удалось», чтобы вечный спиннер не выдавался за
+ * загрузку, которая на самом деле уже завершилась ошибкой.
+ */
+private sealed interface PageLoadState {
+    data object Loading : PageLoadState
+    data class Loaded(val bitmap: ImageBitmap) : PageLoadState
+    data object Failed : PageLoadState
+}
 
 /**
  * Постраничный и непрерывный режим для PDF и комиксов.
@@ -115,12 +133,17 @@ fun PagedReader(
     }
 
     val pageContent: @Composable (Int, Boolean) -> Unit = { page, forContinuous ->
-        val bitmap by produceState<ImageBitmap?>(initialValue = null, page, state.book?.id) {
-            value = if (state.isPdf || state.book?.format?.name == "PDF") {
-                renderPdfPage(page, targetWidthPx)?.asImageBitmap()
-            } else {
-                loadComicPage(page)?.let { bytes ->
-                    runCatching {
+        // Раньше здесь был ImageBitmap? — и «страница ещё грузится», и «страницу
+        // не удалось декодировать вообще никогда» выглядели одинаково: вечный
+        // спиннер без единого отличия. Пользователь видел «бесконечную
+        // загрузку» именно там, где на самом деле загрузка уже завершилась
+        // неудачей. PageLoadState даёт этим двум состояниям разный вид.
+        val pageState by produceState<PageLoadState>(initialValue = PageLoadState.Loading, page, state.book?.id) {
+            value = runCatching {
+                if (state.isPdf || state.book?.format?.name == "PDF") {
+                    renderPdfPage(page, targetWidthPx)?.asImageBitmap()
+                } else {
+                    loadComicPage(page)?.let { bytes ->
                         val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
                         android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
                         var sample = 1
@@ -133,8 +156,14 @@ fun PagedReader(
                             inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
                         }
                         android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)?.asImageBitmap()
-                    }.getOrNull()
+                    }
                 }
+            }.getOrElse { error ->
+                Log.w("PagedReader", "Failed to load page $page of \"${state.book?.fileName}\"", error)
+                null
+            }?.let { PageLoadState.Loaded(it) } ?: run {
+                Log.w("PagedReader", "Page $page of \"${state.book?.fileName}\" decoded to null")
+                PageLoadState.Failed
             }
         }
 
@@ -143,15 +172,14 @@ fun PagedReader(
             modifier = if (forContinuous) {
                 Modifier
                     .fillMaxWidth()
-                    .then(if (bitmap == null) Modifier.height(estimatedPageHeightDp) else Modifier.wrapContentHeight())
+                    .then(if (pageState is PageLoadState.Loaded) Modifier.wrapContentHeight() else Modifier.height(estimatedPageHeightDp))
             } else {
                 Modifier.fillMaxSize()
             },
         ) {
-            val image = bitmap
-            if (image != null) {
-                Image(
-                    bitmap = image,
+            when (val current = pageState) {
+                is PageLoadState.Loaded -> Image(
+                    bitmap = current.bitmap,
                     contentDescription = stringResource(R.string.reader_page_of, page + 1, state.pageCount),
                     contentScale = if (forContinuous) ContentScale.FillWidth else ContentScale.Fit,
                     modifier = if (forContinuous) {
@@ -162,8 +190,7 @@ fun PagedReader(
                         Modifier.fillMaxSize()
                     },
                 )
-            } else {
-                Box(
+                PageLoadState.Loading -> Box(
                     modifier = if (forContinuous) {
                         Modifier
                             .fillMaxWidth()
@@ -174,6 +201,29 @@ fun PagedReader(
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = palette.accent)
+                }
+                PageLoadState.Failed -> Box(
+                    modifier = if (forContinuous) {
+                        Modifier
+                            .fillMaxWidth()
+                            .height(estimatedPageHeightDp)
+                    } else {
+                        Modifier.fillMaxSize()
+                    },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Rounded.BrokenImage,
+                            contentDescription = null,
+                            tint = palette.accent.copy(alpha = 0.7f),
+                        )
+                        Text(
+                            text = stringResource(R.string.reader_page_load_failed, page + 1),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.accent.copy(alpha = 0.7f),
+                        )
+                    }
                 }
             }
         }

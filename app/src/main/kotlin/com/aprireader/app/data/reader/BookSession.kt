@@ -100,7 +100,10 @@ sealed class BookSession(val book: Book) : Closeable {
             // readBytesUpTo, а не readBytes — CBZ/CBR-страница не должна
             // иметь возможность распаковаться в память без ограничения
             // размера (zip/rar-бомба), см. readBytesUpTo.
-            runCatching { document.openPage(index)?.use { it.readBytesUpTo() } }.getOrNull()
+            runCatching { document.openPage(index)?.use { it.readBytesUpTo() } }
+                .onFailure { android.util.Log.w("BookSession.Comic", "page($index) failed for \"${book.fileName}\"", it) }
+                .getOrNull()
+                .also { if (it == null) android.util.Log.w("BookSession.Comic", "page($index) returned null for \"${book.fileName}\" (openPage null or 0 bytes)") }
         }
 
         override fun close() = document.close()
@@ -167,8 +170,16 @@ class BookSessionFactory(
 
     /** Открывает книгу в том режиме, который соответствует её формату. */
     suspend fun open(book: Book): Result<BookSession> = withContext(Dispatchers.IO) {
-        runCatching {
+        // Диагностика для "бесконечной загрузки" при открытии CBZ/CBR: если
+        // зависание реальное (не в UI, а здесь), в логе будет видно, на каком
+        // именно шаге — accessFor, материализация файла (CBR/PDF копируют себя
+        // в кэш перед разбором) или сам разбор архива.
+        val tag = "BookSessionFactory"
+        val startedAt = System.currentTimeMillis()
+        android.util.Log.d(tag, "open(\"${book.fileName}\", format=${book.format}) started")
+        val result = runCatching {
             val access = library.accessFor(book)
+            android.util.Log.d(tag, "open: accessFor() done in ${System.currentTimeMillis() - startedAt}ms")
             when (book.format) {
                 BookFormat.PDF -> openPdf(book, access)
                 BookFormat.CBZ, BookFormat.CBR -> BookSession.Comic(
@@ -182,6 +193,9 @@ class BookSessionFactory(
                 }
             }
         }
+        result.onFailure { android.util.Log.w(tag, "open(\"${book.fileName}\") FAILED after ${System.currentTimeMillis() - startedAt}ms", it) }
+        result.onSuccess { android.util.Log.d(tag, "open(\"${book.fileName}\") succeeded in ${System.currentTimeMillis() - startedAt}ms") }
+        result
     }
 
     private fun openPdf(book: Book, access: SafDocumentAccess): BookSession.Pdf {

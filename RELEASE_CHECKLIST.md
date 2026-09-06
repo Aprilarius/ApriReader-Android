@@ -1,7 +1,7 @@
 # ApriReader — Release Candidate Checklist
 
 - **Target Platforms**: Google Play Store, RuStore
-- **Release Version**: 1.8.0 (Version Code: 18)
+- **Release Version**: 2.0.0 (Version Code: 19)
 - **Target SDK**: 36 (Android 15+ / 16 ready)
 - **Min SDK**: 26 (Android 8.0 Oreo)
 - **Release Artifacts** (`--rerun-tasks`, без кэша, дата сборки — см. таймстемп файла):
@@ -23,6 +23,8 @@
 | **Permissions match declared list** | `aapt dump badging` matches [PRIVACY.md](PRIVACY.md) / [play/data-safety.md](play/data-safety.md) | **PASSED** | Six lines: `INTERNET`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS`, `ACCESS_NETWORK_STATE` (from AndroidX Media3/ExoPlayer, not requested directly), and the self-declared signature-level `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Docs updated 2026-09-05 to reflect the audiobook-related additions. |
 | **Zip Slip & Traversal Protection** | Archive parsers must sanitize paths and prevent directory traversal | **PASSED** | `ZipArchive.kt` strictly cleans all entry paths and rejects `..` lookups. |
 | **Decompression-bomb protection** | Archive entries decompressed into memory must be size-capped | **PASSED** (fixed 2026-09-05) | `ZipArchive.readAll()`, CBZ page reads, and CBR/junrar reads all go through `readBytesUpTo()` (100MB cap), checked both by declared size and by actual bytes read. Regression test in `MaliciousAndCorruptedFileTest.kt`. |
+| **Comic (CBZ/CBR) file pickability** | SAF `EXTRA_MIME_TYPES` list must not use invented MIME strings providers never report | **PASSED** (fixed 2026-09-06) | `SUPPORTED_MIME_TYPES` now leads with `"*/*"`, disabling OS-level MIME filtering; real format validation stays exact via `BookFormat.fromExtension()` post-selection. See BUG-022. |
+| **CBR concurrent-decode safety** | Shared non-thread-safe archive handles must not be accessed from concurrent page-decode coroutines | **PASSED** (fixed 2026-09-06) | `CbrDocument.openPage()` now wraps `junrar.Archive` access in `synchronized(archive)` — `HorizontalPager`/`VerticalPager` decode neighboring pages concurrently by design. Verified with a 4-thread concurrent-read test against a real user CBR file. See BUG-023. |
 | **Font & Binary Ingestion** | Custom font importer validates headers and caps sizes | **PASSED** | Header magic byte validator (TTF/OTF/WOFF/TTC) and 25MB size limit in place. |
 | **XXE Protection** | XML parsers must reject external entities and DOCTYPE | **PASSED** | `Xml.kt` disables `disallow-doctype-decl`, external general/parameter entities. |
 | **Process Death & State Preservation** | UI states and reading progress survive lifecycle kills | **PASSED** | Progress committed to Room DB via `appScope`; `SettingsRepository` & `AvatarStore` backed by persistent storage. |
@@ -37,23 +39,27 @@
 
 - **Unit tests** (`./gradlew clean test`):
   - `:bookformat:testDebugUnitTest`: 28 tests **PASSED**.
-  - `:app:testDebugUnitTest`: 64 tests **PASSED**.
-  - **Total**: 92 tests, 0 failures.
+  - `:app:testDebugUnitTest`: 92 tests **PASSED**.
+  - **Total**: 120 tests, 0 failures.
 - **Static analysis**:
-  - `:app:lintDebug`: **PASSED**, 0 errors (last full run before this had 19 `MissingTranslation` errors — since fixed).
+  - `:app:lintDebug`: **PASSED**, 0 errors.
 - **Build verification**:
   - `:app:assembleRelease`, `:app:bundleRelease` (`--rerun-tasks`, no cache): **SUCCESSFUL**.
   - `apksigner verify`: signature valid, `CN=ApriReader` (upload key, see §4).
 
 ## 3. Known gaps
 
-- **Real-device verification — done by the project owner (2026-09-05).**
-  Everything in §1 marked PASSED had only been verified by static analysis,
-  compilation, unit tests, and lint in this environment (an emulator was
-  attempted with Hyper-V/WHPX acceleration, but its `adb push`/install
-  protocol hung consistently here — a host/environment issue, not a code
-  one). The owner installed the signed build on a real device and exercised
-  it directly.
+- **Real-device verification for 2.0.0 — pending.** The comic-picker
+  (BUG-022) and CBR-concurrency (BUG-023) fixes were verified via unit/JVM
+  tests against the reporting user's real CBR file (staged locally, not
+  committed — copyrighted content), not on-device: no working emulator in
+  this environment (Hyper-V/WHPX booted, but `adb push`/`install` hung and
+  the qemu process died twice). Ask the reporting user to confirm both: (a)
+  adding a new `.cbz`/`.cbr` from the system picker no longer shows it
+  greyed out, and (b) flipping quickly through a CBR comic's pages no
+  longer shows "не удалось загрузить страницу N" on any page.
+- **1.8.0's real-device pass (done by the project owner, 2026-09-05)**
+  predates both of the above fixes and does not cover them.
 - **`RELEASE_CHECKLIST.md` itself was stale until 2026-09-05** (referenced
   version 1.0.0 and old test counts) — now current as of this version; keep
   it updated on the next release rather than letting it drift again.

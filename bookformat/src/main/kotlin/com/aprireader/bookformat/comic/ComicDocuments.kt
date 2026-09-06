@@ -117,7 +117,16 @@ class CbrDocument(file: File, fileName: String) : PagedDocument {
         // junrar не даёт произвольного доступа к потоку, поэтому страница читается целиком
         // (readBytesUpTo — не только компактность, но и защита от RAR-бомбы: без
         // потолка размера страница-бомба уронила бы процесс по OutOfMemoryError).
-        val bytes = runCatching { archive.getInputStream(header).use { it.readBytesUpTo() } }.getOrNull() ?: return null
+        //
+        // synchronized — Archive не потокобезопасен: пейджер (HorizontalPager с
+        // beyondViewportPageCount = 1) декодирует текущую и соседние страницы
+        // параллельно на разных IO-потоках, и параллельные getInputStream() на
+        // одном Archive портят друг другу внутреннее состояние распаковщика —
+        // часть страниц декодируется в 0 байт. Подтверждено тестом
+        // CbrConcurrencyDiagnosticTest на реальном файле пользователя.
+        val bytes = synchronized(archive) {
+            runCatching { archive.getInputStream(header).use { it.readBytesUpTo() } }.getOrNull()
+        } ?: return null
         return ByteArrayInputStream(bytes)
     }
 
