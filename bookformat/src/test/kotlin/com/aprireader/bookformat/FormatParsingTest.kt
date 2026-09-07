@@ -253,6 +253,24 @@ class FormatDetectionTest {
         assertEquals(BookFormat.PDF, BookOpener.detectFormat("noext", null, "%PDF-1.7".toByteArray()))
         assertEquals(BookFormat.CBR, BookOpener.detectFormat("noext", null, "Rar! ".toByteArray()))
     }
+
+    @Test
+    fun `detects fb2 by content when the provider reports the book title instead of a file name`() {
+        // Ровно тот случай, который приводил к «Формат не поддерживается» при
+        // импорте: часть файловых менеджеров и SAF-провайдеров показывает
+        // DISPLAY_NAME без расширения — например, заголовок книги из самого
+        // FB2 вместо реального имени файла — и MIME-тип при этом отсутствует
+        // или не сообщает ничего полезного (generic/octet-stream).
+        val fb2Xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><FictionBook><body/></FictionBook>"
+        assertEquals(
+            BookFormat.FB2,
+            BookOpener.detectFormat("Братство кольца", null, fb2Xml.toByteArray()),
+        )
+        assertEquals(
+            BookFormat.FB2,
+            BookOpener.detectFormat("Братство кольца", "application/octet-stream", fb2Xml.toByteArray()),
+        )
+    }
 }
 
 // --- вспомогательные построители ---

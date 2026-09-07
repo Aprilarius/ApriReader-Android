@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
+import com.aprireader.bookformat.BookOpener
 import com.aprireader.bookformat.model.BookFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -111,7 +112,20 @@ class LibraryScanner(private val context: Context) {
                             queue += childId
                             continue
                         }
-                        if (BookFormat.fromExtension(name) == null) continue
+                        // fromExtension в первую очередь — точнее и не требует
+                        // разбора MIME. Но у части SAF-провайдеров (особенно
+                        // видно на FB2 — они реже встречаются, чем EPUB/PDF, и
+                        // некоторые файловые менеджеры показывают вместо имени
+                        // файла заголовок книги из метаданных без расширения)
+                        // DISPLAY_NAME приходит вообще без расширения — тогда
+                        // единственная зацепка, которая тут доступна бесплатно
+                        // (без открытия потока на каждый файл в папке — это
+                        // сделало бы полное сканирование на тысячах файлов
+                        // болезненно медленным), это MIME-тип, который тот же
+                        // запрос курсора уже вернул бесплатно.
+                        val recognized = BookFormat.fromExtension(name) != null ||
+                            BookOpener.detectFormat(name, mime, header = null) != null
+                        if (!recognized) continue
                         found += DocumentInfo(
                             uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId),
                             displayName = name,

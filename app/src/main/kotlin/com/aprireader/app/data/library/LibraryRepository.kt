@@ -225,8 +225,38 @@ class LibraryRepository(
      * Импортирует один документ. Если книга с таким контентным ключом уже есть,
      * обновляется только её адрес — прогресс, закладки и статистика сохраняются.
      */
+    /**
+     * Определяет формат добавляемого файла надёжнее, чем просто по расширению.
+     *
+     * `BookFormat.fromExtension(displayName)` — единственная проверка, которая
+     * была здесь раньше — молча ломается, стоит SAF-провайдеру вернуть
+     * DISPLAY_NAME без расширения. Это не гипотетический случай: часть
+     * файловых менеджеров и провайдеров показывает вместо реального имени
+     * файла заголовок из встроенных метаданных (характерно для FB2 — там
+     * заголовок книги — это буквально первый читаемый текст в файле), из-за
+     * чего пользователь видел «Формат не поддерживается» для совершенно
+     * нормального файла.
+     *
+     * `BookOpener.detectFormat()` уже умеет надёжно определять формат по
+     * расширению → MIME → сигнатуре первых байт файла (в этом порядке
+     * доверия) — этим же путём формат определяется при самом открытии книги.
+     * Раньше импорт был единственным местом, которое этот путь обходило.
+     * Разбор сигнатуры требует прочитать начало файла, поэтому чтение
+     * запускается только если расширение и MIME ничего не дали — на
+     * подавляющем большинстве файлов, у которых имя нормальное, это как и
+     * раньше ровно одна проверка расширения без единого обращения к диску.
+     */
+    private suspend fun detectImportFormat(info: DocumentInfo): BookFormat? =
+        BookOpener.detectFormat(info.displayName, info.mimeType, header = null)
+            ?: withContext(Dispatchers.IO) {
+                val header = runCatching {
+                    context.contentResolver.openInputStream(info.uri)?.use { it.readHeader() }
+                }.getOrNull()
+                header?.let { BookOpener.detectFormat(info.displayName, info.mimeType, it) }
+            }
+
     private suspend fun importDocument(info: DocumentInfo, sourceUri: String?): ImportOutcome {
-        val format = BookFormat.fromExtension(info.displayName) ?: return ImportOutcome.UNSUPPORTED_FORMAT
+        val format = detectImportFormat(info) ?: return ImportOutcome.UNSUPPORTED_FORMAT
         val id = BookKey.compute(context, info.uri, info.size, info.displayName)
 
         val existing = bookDao.getById(id)
@@ -572,4 +602,19 @@ class LibraryRepository(
         /** Ширина рендера первой страницы PDF под обложку. */
         const val COVER_RENDER_WIDTH = 600
     }
+}
+
+/** Столько же байт, сколько BookOpener читает для собственного определения формата по сигнатуре. */
+private const val FORMAT_SNIFF_BYTES = 1024
+
+/** Читает начало потока для определения формата по сигнатуре — столько, сколько наберётся, но не больше [n]. */
+private fun java.io.InputStream.readHeader(n: Int = FORMAT_SNIFF_BYTES): ByteArray {
+    val buffer = ByteArray(n)
+    var read = 0
+    while (read < n) {
+        val count = this.read(buffer, read, n - read)
+        if (count <= 0) break
+        read += count
+    }
+    return if (read == n) buffer else buffer.copyOf(read)
 }
