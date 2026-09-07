@@ -18,7 +18,9 @@ import com.aprireader.bookformat.pdf.PdfTextDocument
 import com.aprireader.bookformat.util.readBytesUpTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.Closeable
 
@@ -88,6 +90,19 @@ sealed class BookSession(val book: Book) : Closeable {
         override fun close() = document.close()
     }
 
+    /**
+     * Комикс (CBZ/CBR): читает байты страницы через [document] и декодирует их
+     * в битмап под текущую ширину экрана.
+     *
+     * Раньше чтение байт и декодирование в битмап были разнесены между этим
+     * классом и UI (`PagedReader.kt`): UI решал, когда декодировать, сам
+     * считал даунсемплинг и не знал о параллелизме между соседними страницами
+     * пейджера. Это ровно то место, где рождались трудноуловимые баги —
+     * гонки в разборщике архива и перегрузка памяти при параллельном
+     * декодировании выглядели одинаково как «часть страниц не рендерится».
+     * Теперь весь путь страницы — от архива до готового битмапа с кэшем —
+     * находится в одном месте, зеркально [BookSession.Pdf].
+     */
     class Comic(
         book: Book,
         private val document: PagedDocument,
@@ -96,17 +111,51 @@ sealed class BookSession(val book: Book) : Closeable {
         override val unitCount: Int = document.pageCount
         override val supportsTextModes: Boolean get() = false
 
-        suspend fun page(index: Int): ByteArray? = withContext(Dispatchers.IO) {
+        // Пейджер держит в композиции текущую страницу и обе соседние
+        // (beyondViewportPageCount = 1), поэтому свайп подряд по нескольким
+        // страницам запускает несколько параллельных декодирований —
+        // семафор ограничивает пиковое потребление памяти, а не сам факт
+        // параллелизма (см. ComicPageDecoder.decode про retry при OOM).
+        private val decodeSemaphore = Semaphore(permits = 2)
+
+        // Кэш готовых битмапов, а не только сырых байт: повторный decode того
+        // же кадра (например, при возврате на уже читанную страницу) не
+        // должен снова гонять BitmapFactory. Не перерециркулирует вытесненные
+        // битмапы намеренно — Compose может ещё держать ссылку на вытесненный
+        // кадр, и принудительный recycle() уронил бы приложение с "Canvas:
+        // trying to use a recycled bitmap" (та же осторожность, что и в
+        // BookSession.Pdf.pageCache).
+        private val pageCache = object : android.util.LruCache<String, Bitmap>(48 * 1024 * 1024) {
+            override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+        }
+
+        suspend fun renderPage(index: Int, targetWidthPx: Int): Bitmap? = withContext(Dispatchers.IO) {
+            if (index < 0 || index >= unitCount) return@withContext null
+            val key = "$index-$targetWidthPx"
+            pageCache.get(key)?.takeIf { !it.isRecycled }?.let { return@withContext it }
+
+            val bytes = readPageBytes(index) ?: return@withContext null
+            decodeSemaphore.withPermit { ComicPageDecoder.decode(bytes, targetWidthPx) }
+                ?.also { pageCache.put(key, it) }
+        }
+
+        private fun readPageBytes(index: Int): ByteArray? =
             // readBytesUpTo, а не readBytes — CBZ/CBR-страница не должна
             // иметь возможность распаковаться в память без ограничения
             // размера (zip/rar-бомба), см. readBytesUpTo.
             runCatching { document.openPage(index)?.use { it.readBytesUpTo() } }
-                .onFailure { android.util.Log.w("BookSession.Comic", "page($index) failed for \"${book.fileName}\"", it) }
+                .onFailure { android.util.Log.w(TAG, "readPageBytes($index) failed for \"${book.fileName}\"", it) }
                 .getOrNull()
-                .also { if (it == null) android.util.Log.w("BookSession.Comic", "page($index) returned null for \"${book.fileName}\" (openPage null or 0 bytes)") }
+                .also { if (it == null) android.util.Log.w(TAG, "readPageBytes($index) returned null for \"${book.fileName}\" (openPage null or 0 bytes)") }
+
+        override fun close() {
+            pageCache.evictAll()
+            document.close()
         }
 
-        override fun close() = document.close()
+        private companion object {
+            const val TAG = "BookSession.Comic"
+        }
     }
 
     /**

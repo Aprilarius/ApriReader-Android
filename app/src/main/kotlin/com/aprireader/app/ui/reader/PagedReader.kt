@@ -86,7 +86,7 @@ fun PagedReader(
     onNextPage: () -> Unit = {},
     onPreviousPage: () -> Unit = {},
     onToggleChrome: () -> Unit,
-    loadComicPage: suspend (Int) -> ByteArray?,
+    renderComicPage: suspend (Int, Int) -> android.graphics.Bitmap?,
     renderPdfPage: suspend (Int, Int) -> android.graphics.Bitmap?,
     modifier: Modifier = Modifier,
 ) {
@@ -141,27 +141,14 @@ fun PagedReader(
         val pageState by produceState<PageLoadState>(initialValue = PageLoadState.Loading, page, state.book?.id) {
             value = runCatching {
                 if (state.isPdf || state.book?.format?.name == "PDF") {
-                    renderPdfPage(page, targetWidthPx)?.asImageBitmap()
+                    renderPdfPage(page, targetWidthPx)
                 } else {
-                    loadComicPage(page)?.let { bytes ->
-                        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-                        var sample = 1
-                        val maxDim = targetWidthPx.coerceAtLeast(1080) * 2
-                        while (bounds.outWidth / sample > maxDim || bounds.outHeight / sample > maxDim * 2) {
-                            sample *= 2
-                        }
-                        val opts = android.graphics.BitmapFactory.Options().apply {
-                            inSampleSize = sample
-                            inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
-                        }
-                        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)?.asImageBitmap()
-                    }
+                    renderComicPage(page, targetWidthPx)
                 }
             }.getOrElse { error ->
                 Log.w("PagedReader", "Failed to load page $page of \"${state.book?.fileName}\"", error)
                 null
-            }?.let { PageLoadState.Loaded(it) } ?: run {
+            }?.asImageBitmap()?.let { PageLoadState.Loaded(it) } ?: run {
                 Log.w("PagedReader", "Page $page of \"${state.book?.fileName}\" decoded to null")
                 PageLoadState.Failed
             }
