@@ -797,7 +797,8 @@ class ReaderViewModel(
 
     fun consumeScrollTarget() = _state.update { it.copy(scrollToBlock = null) }
 
-    suspend fun pageBytes(index: Int): ByteArray? = (session as? BookSession.Comic)?.page(index)
+    suspend fun renderComicPage(index: Int, widthPx: Int) =
+        (session as? BookSession.Comic)?.renderPage(index, widthPx)
 
     suspend fun renderPdfPage(index: Int, widthPx: Int) =
         (session as? BookSession.Pdf)?.renderPage(index, widthPx)

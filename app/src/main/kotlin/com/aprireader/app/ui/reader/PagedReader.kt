@@ -55,24 +55,6 @@ import com.aprireader.app.R
 import com.aprireader.app.data.prefs.ReadingScrollMode
 import com.aprireader.app.ui.theme.ReaderPalette
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-
-/**
- * Ограничивает число страниц, декодируемых одновременно.
- *
- * Пейджер держит в композиции текущую страницу и обе соседние
- * (`beyondViewportPageCount = 1`), поэтому свайп подряд по нескольким
- * страницам комикса запускает несколько параллельных `produceState`-корутин,
- * каждая из которых декодирует полноразмерный битмап в память. На больших
- * сканах (нередко 3000×4000+ px до даунсемплинга) три одновременных декодирования
- * дают заметный пик выделения памяти — на части устройств это приводило к
- * `OutOfMemoryError` у части страниц при быстром перелистывании, из-за чего
- * они попадали в состояние Failed без видимой причины. Семафор не убирает
- * саму нагрузку, но не даёт декодированию нескольких страниц накладываться
- * друг на друга, оставляя пиковое потребление памяти предсказуемым.
- */
-private val pageDecodeSemaphore = Semaphore(permits = 2)
 
 /**
  * Состояние загрузки одной страницы PDF/комикса — отдельно от «ещё грузится»
@@ -83,53 +65,6 @@ private sealed interface PageLoadState {
     data object Loading : PageLoadState
     data class Loaded(val bitmap: ImageBitmap) : PageLoadState
     data object Failed : PageLoadState
-}
-
-/**
- * Декодирует страницу комикса с даунсемплингом под ширину экрана.
- *
- * При нехватке памяти (`OutOfMemoryError` — частая причина «страница не
- * загрузилась» при быстром перелистывании больших сканов) декодирование
- * повторяется один раз с вдвое более грубым семплингом вместо немедленного
- * провала: качество страницы при этом заметно не страдает (она всё равно
- * растягивается на ширину экрана), а шанс уложиться в доступную память
- * заметно выше.
- */
-private fun decodeComicPage(
-    bytes: ByteArray,
-    targetWidthPx: Int,
-    page: Int,
-    fileName: String?,
-): androidx.compose.ui.graphics.ImageBitmap? {
-    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-
-    val maxDim = targetWidthPx.coerceAtLeast(1080) * 2
-    var sample = 1
-    while (bounds.outWidth / sample > maxDim || bounds.outHeight / sample > maxDim * 2) {
-        sample *= 2
-    }
-
-    repeat(2) { attempt ->
-        val effectiveSample = if (attempt == 0) sample else sample * 2
-        val opts = android.graphics.BitmapFactory.Options().apply {
-            inSampleSize = effectiveSample
-            inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
-        }
-        val bitmap = try {
-            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-        } catch (oom: OutOfMemoryError) {
-            if (attempt == 0) {
-                Log.w("PagedReader", "OOM decoding page $page of \"$fileName\" at sample=$effectiveSample, retrying coarser")
-                null
-            } else {
-                throw oom
-            }
-        }
-        if (bitmap != null) return bitmap.asImageBitmap()
-    }
-    return null
 }
 
 /**
@@ -151,7 +86,7 @@ fun PagedReader(
     onNextPage: () -> Unit = {},
     onPreviousPage: () -> Unit = {},
     onToggleChrome: () -> Unit,
-    loadComicPage: suspend (Int) -> ByteArray?,
+    renderComicPage: suspend (Int, Int) -> android.graphics.Bitmap?,
     renderPdfPage: suspend (Int, Int) -> android.graphics.Bitmap?,
     modifier: Modifier = Modifier,
 ) {
@@ -204,18 +139,16 @@ fun PagedReader(
         // загрузку» именно там, где на самом деле загрузка уже завершилась
         // неудачей. PageLoadState даёт этим двум состояниям разный вид.
         val pageState by produceState<PageLoadState>(initialValue = PageLoadState.Loading, page, state.book?.id) {
-            value = pageDecodeSemaphore.withPermit {
-                runCatching {
-                    if (state.isPdf || state.book?.format?.name == "PDF") {
-                        renderPdfPage(page, targetWidthPx)?.asImageBitmap()
-                    } else {
-                        loadComicPage(page)?.let { bytes -> decodeComicPage(bytes, targetWidthPx, page, state.book?.fileName) }
-                    }
-                }.getOrElse { error ->
-                    Log.w("PagedReader", "Failed to load page $page of \"${state.book?.fileName}\"", error)
-                    null
+            value = runCatching {
+                if (state.isPdf || state.book?.format?.name == "PDF") {
+                    renderPdfPage(page, targetWidthPx)
+                } else {
+                    renderComicPage(page, targetWidthPx)
                 }
-            }?.let { PageLoadState.Loaded(it) } ?: run {
+            }.getOrElse { error ->
+                Log.w("PagedReader", "Failed to load page $page of \"${state.book?.fileName}\"", error)
+                null
+            }?.asImageBitmap()?.let { PageLoadState.Loaded(it) } ?: run {
                 Log.w("PagedReader", "Page $page of \"${state.book?.fileName}\" decoded to null")
                 PageLoadState.Failed
             }

@@ -245,7 +245,7 @@ fun ReaderScreen(
                     onNextPage = onNextPage,
                     onPreviousPage = onPreviousPage,
                     onToggleChrome = viewModel::toggleChrome,
-                    loadComicPage = viewModel::pageBytes,
+                    renderComicPage = { page, width -> viewModel.renderComicPage(page, width) },
                     renderPdfPage = { page, width -> viewModel.renderPdfPage(page, width) },
                 )
 
